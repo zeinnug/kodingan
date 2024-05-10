@@ -1,0 +1,122 @@
+import numpy as np
+
+
+# Banner program
+print("PROGRAM PENYELESAIAN PERSAMAAN LINIER")
+print("MUHAMMAD ZEIN AL-KAUTSAR NUGROHO - 21120122140151")
+print("METODE NUMERIK KELAS B")
+
+
+class LinearSolver:
+    def solve_using_inverse(self, coefficient_matrix, constant_vector):
+        try:
+            coefficient_matrix_inv = np.linalg.inv(coefficient_matrix)
+            solution_vector = np.dot(coefficient_matrix_inv, constant_vector)
+            return solution_vector
+        except np.linalg.LinAlgError:
+            print("Matriks koefisien tidak memiliki invers. Sistem tidak dapat diselesaikan.")
+            return None
+
+    def solve_using_lu_gauss(self, coefficient_matrix, constant_vector):
+        n = len(coefficient_matrix)
+        upper_matrix = np.zeros((n, n))
+        lower_matrix = np.eye(n)
+
+        for i in range(n):
+            for j in range(n):
+                upper_matrix[i][j] = coefficient_matrix[i][j]
+
+        for i in range(n):
+            pivot_index = i
+            for j in range(i+1, n):
+                if abs(upper_matrix[j][i]) > abs(upper_matrix[pivot_index][i]):
+                    pivot_index = j
+            upper_matrix[[i, pivot_index]] = upper_matrix[[pivot_index, i]]
+            lower_matrix[[i, pivot_index]] = lower_matrix[[pivot_index, i]]
+
+            for j in range(i+1, n):
+                factor = upper_matrix[j][i] / upper_matrix[i][i]
+                lower_matrix[j][i] = factor
+                for k in range(i, n):
+                    upper_matrix[j][k] -= factor * upper_matrix[i][k]
+
+        y = np.linalg.solve(lower_matrix, constant_vector)
+        x = np.linalg.solve(upper_matrix, y)
+
+        return x
+
+    def solve_using_crout(self, coefficient_matrix, constant_vector):
+        n = len(coefficient_matrix)
+        L = np.zeros((n, n))
+        U = np.zeros((n, n))
+
+        for j in range(n):
+            U[j][j] = 1
+            for i in range(j, n):
+                L[i][j] = coefficient_matrix[i][j] - sum(L[i][k] * U[k][j] for k in range(i))
+            for i in range(j+1, n):
+                U[j][i] = (coefficient_matrix[j][i] - sum(L[j][k] * U[k][i] for k in range(j))) / L[j][j]
+
+        y = np.linalg.solve(L, constant_vector)
+        x = np.linalg.solve(U, y)
+
+        return x
+
+    def solve(self):
+        print("Penyelesaian Sistem Persamaan Linier")
+        print("-------------------------------------")
+
+
+        # Meminta input jumlah variabel
+        num_variables = int(input("Masukkan jumlah variabel (2-4): "))
+
+        # Memastikan input valid
+        if num_variables < 2 or num_variables > 4:
+            print("Jumlah variabel tidak valid. Harap masukkan angka antara 2 dan 4.")
+            return
+
+        # Meminta matriks koefisien dari pengguna
+        print("Masukkan matriks koefisien:")
+        coefficient_matrix = []
+        for i in range(num_variables):
+            row = input(f"Masukkan baris ke-{i+1} (pisahkan elemen dengan spasi): ").split()
+            if len(row) != num_variables:
+                print(f"Jumlah elemen tidak sesuai dengan jumlah variabel yang dimasukkan ({num_variables})")
+                return
+            coefficient_matrix.append([float(x) for x in row])
+
+        # Meminta vektor konstanta dari pengguna
+        print("Masukkan vektor konstanta:")
+        constant_vector = np.array([[float(x)] for x in input("Masukkan elemen vektor konstanta (pisahkan dengan spasi): ").split()])
+
+        # Memilih metode penyelesaian
+        print("Pilih metode penyelesaian:")
+        print("1. Metode Matriks Balikan")
+        print("2. Metode Dekomposisi LU Gauss")
+        print("3. Metode Dekomposisi Crout")
+        method_choice = int(input("Masukkan nomor metode yang ingin Anda gunakan: "))
+
+        # Penyelesaian berdasarkan metode yang dipilih
+        solver = LinearSolver()
+        if method_choice == 1:
+            solution = solver.solve_using_inverse(coefficient_matrix, constant_vector)
+        elif method_choice == 2:
+            solution = solver.solve_using_lu_gauss(coefficient_matrix, constant_vector)
+        elif method_choice == 3:
+            solution = solver.solve_using_crout(coefficient_matrix, constant_vector)
+        else:
+            print("Pilihan tidak valid. Harap pilih nomor metode yang tersedia.")
+            return
+
+        # Menampilkan hasil
+        if solution is not None:
+            print("\nSolusi:")
+            for i in range(num_variables):
+                print(f"x{i+1} = {solution[i][0]}")
+
+
+if __name__ == "__main__":
+    solver = LinearSolver()
+    solver.solve()
+3
+
